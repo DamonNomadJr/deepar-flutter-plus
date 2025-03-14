@@ -33,7 +33,6 @@ Also add the following permission requests in your AndroidManifest.xml
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"  />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-<uses-permission android:name="Manifest.permission.CAPTURE_AUDIO_OUTPUT"  />
 <uses-permission android:name="android.permission.CAMERA" />
 ```
 
