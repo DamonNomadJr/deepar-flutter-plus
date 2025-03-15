@@ -13,7 +13,7 @@ import 'resolution_preset.dart';
 import 'utils.dart';
 
 /// Controls all interaction with DeepAR Sdk.
-class DeepArController {
+class DeepArControllerPlus {
   late final DeepArPlatformHandler _deepArPlatformHandler;
   late final Resolution _resolution;
 
@@ -27,13 +27,13 @@ class DeepArController {
   CameraDirection _cameraDirection = CameraDirection.front;
   bool _flashState = false;
 
-  DeepArController() {
+  DeepArControllerPlus() {
     _deepArPlatformHandler = DeepArPlatformHandler();
   }
 
   ///Return true if the camera preview is initialized
   ///
-  ///For [iOS], please call the function after [DeepArPreview] widget has been built.
+  ///For [iOS], please call the function after [DeepArPreviewPlus] widget has been built.
   bool get isInitialized => _textureId != null;
 
   ///If the user has allowed required camera permissions
@@ -41,7 +41,7 @@ class DeepArController {
 
   ///Aspect ratio of the preview image
   ///
-  ///For [iOS], please call the function after [DeepArPreview] widget has been built.
+  ///For [iOS], please call the function after [DeepArPreviewPlus] widget has been built.
   double get aspectRatio => _aspectRatio ?? 1.0;
 
   ///Return true if the recording is in progress.
@@ -52,7 +52,7 @@ class DeepArController {
 
   ///Size of the preview image
   ///
-  ///For [iOS], please call the function after [DeepArPreview] widget has been built.
+  ///For [iOS], please call the function after [DeepArPreviewPlus] widget has been built.
   Size get imageDimensions {
     assert(isInitialized, "DeepArController isn't initialized yet");
     return _imageSize!;
@@ -66,11 +66,11 @@ class DeepArController {
   ///
   ///[androidLicenseKey] and [iosLicenseKey] both cannot be null together.
   ///
-  ///Recommended resolution: [Resolution.high] for optimum quality without performance tradeoffs
+  ///Recommended resolution: [Resolution.medium] for optimum quality without performance tradeoffs
   Future<bool> initialize({
     required String? androidLicenseKey,
     required String? iosLicenseKey,
-    Resolution resolution = Resolution.high,
+    Resolution resolution = Resolution.medium,
   }) async {
     assert(androidLicenseKey != null || iosLicenseKey != null,
         "Both android and iOS license keys cannot be null");
@@ -95,7 +95,6 @@ class DeepArController {
       assert(iosLicenseKey != null, "iosLicenseKey missing");
       _imageSize = iOSImageSizeFromResolution(resolution);
       _aspectRatio = _imageSize!.width / _imageSize!.height;
-      //_textureId = -1;
       return true;
     } else {
       throw ("Platform not supported");
@@ -108,7 +107,7 @@ class DeepArController {
   ///[oniOSViewCreated] callback to update [imageDimensions] and [aspectRatio] after iOS
   ///widget is built
   ///
-  ///Not recommended to use directly. Please use the wrapper [DeepArPreview] instead.
+  ///Not recommended to use directly. Please use the wrapper [DeepArPreviewPlus] instead.
   ///
   ///Android layer uses FlutterTexture while iOS uses NativeViews.
   ///See: https://api.flutter.dev/flutter/widgets/Texture-class.html
@@ -223,18 +222,18 @@ class DeepArController {
 
   ///Switch DeepAR with the passed [mask] path from assets, file path or URL
   Future<String?> switchFaceMask(String mask) async {
-
     try {
       final uri = Uri.parse(mask);
-      if (uri.isAbsolute) { // Check if it's a valid URL
+      if (uri.isAbsolute) {
+        // Check if it's a valid URL
         // Get file from cache or download it
         final file = await DefaultCacheManager().getSingleFile(mask);
-        
+
         return platformRun(
-            androidFunction: () => 
+            androidFunction: () =>
                 _deepArPlatformHandler.switchFaceMaskAndroid(file.path),
-            iOSFunction: () =>
-                _deepArPlatformHandler.switchFaceMaskIos(file.path, _textureId!));
+            iOSFunction: () => _deepArPlatformHandler.switchFaceMaskIos(
+                file.path, _textureId!));
       }
     } catch (e, s) {
       log('Network Face Mask Error', error: e, stackTrace: s);
@@ -250,14 +249,13 @@ class DeepArController {
 
   ///Switch DeepAR with the passed [filter] path from assets, file path or URL
   Future<String?> switchFilter(String filter) async {
-
-
     try {
       final uri = Uri.parse(filter);
-      if (uri.isAbsolute) { // Check if it's a valid URL
+      if (uri.isAbsolute) {
+        // Check if it's a valid URL
         // Get file from cache or download it
         final file = await DefaultCacheManager().getSingleFile(filter);
-        
+
         return platformRun(
             androidFunction: () =>
                 _deepArPlatformHandler.switchFilterAndroid(file.path),

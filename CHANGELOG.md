@@ -1,3 +1,10 @@
+## 0.0.8
+
+- Renamed core classes to include "Plus" suffix for better clarity 🏷️
+  - `DeepArController` → `DeepArControllerPlus`
+  - `DeepArPreview` → `DeepArPreviewPlus`
+  
+
 ## 0.0.7
 
 - Now you can load effects, filters, and masks from:

@@ -2,7 +2,7 @@
 
 An enhanced version of the official DeepAR Flutter SDK that adds support for loading effects from assets, file paths, and URLs with caching. This makes it possible to load effects that are downloaded or stored anywhere on the device's filesystem, or directly from the internet with automatic caching.
 
-This plugin is a fork of the official SDK for [DeepAR](https://deepar.ai). Platforms supported: Android & iOS. 
+This plugin is a fork of the official SDK for [DeepAR](https://pub.dev/packages/deepar_flutter). Platforms supported: Android & iOS. 
 
 The current version of plugin supports: 
 - Load effects from assets, file paths, and URLs with caching ✨ (New!)
@@ -18,14 +18,14 @@ The current version of plugin supports:
 
 
 ## Installation
-Please visit our [developer website](https://developer.deepar.ai) to create a project and generate your separate license keys for both platforms. 
+Please visit the [developer website](https://developer.deepar.ai) to create a project and generate your separate license keys for both platforms. 
 
 Once done, please add the latest `deepar_flutter_plus` dependency to your pubspec.yaml. 
 
 **Android**: 
  1. compileSdkVersion should be 33 or more.
  2. minSdkVersion should be 23 or more.
- 3. Download the native android dependencies from our [downloads](https://developer.deepar.ai/downloads) section and paste it in your flutter project at `android/app/libs/deepar.aar`.
+ 3. Download the native android dependencies from the [downloads](https://developer.deepar.ai/downloads) section and paste it in your flutter project at `android/app/libs/deepar.aar`.
  4. Make sure to `pub clean` & `flutter pub upgrade` to fetch latest working code.
 
 Also add the following permission requests in your AndroidManifest.xml
@@ -84,28 +84,28 @@ end
 
 **Flutter:**
 
-1. Initialize  `DeepArController` by passing in your license keys for both platforms.
+1. Initialize  `DeepArControllerPlus` by passing in your license keys for both platforms.
 ```dart
-final DeepArController _controller = DeepArController();
+final DeepArControllerPlus _controller = DeepArControllerPlus();
 _controller.initialize(
     androidLicenseKey:"---android key---",
     iosLicenseKey:"---iOS key---",
-    resolution: Resolution.high);
+    resolution: Resolution.medium);
 ```
 
-2. Place the DeepArPreview widget in your widget tree to display the preview. 
+2. Place the DeepArPreviewPlus widget in your widget tree to display the preview. 
 ```dart
 @override
 Widget build(BuildContext context) {
     return _controller.isInitialized
-        ? DeepArPreview(_controller)
+        ? DeepArPreviewPlus(_controller)
         : const Center(
             child: Text("Loading Preview")
         );
 }
 ```
 
-To display the preview in full screen, wrap `DeepArPreview` with `Transform.scale()` and use the correct scale factor as per preview area size. More info [here](https://github.com/Ifoegbu1/deepar-flutter-plus/blob/main/example/lib/a_r_view.dart).
+To display the preview in full screen, wrap `DeepArPreviewPlus` with `Transform.scale()` and use the correct scale factor as per preview area size. See example [here](https://github.com/Ifoegbu1/deepar-flutter-plus/blob/main/example/lib/main.dart).
        
 3. Load effects, filters, or masks using assets, file paths, or URLs:
 

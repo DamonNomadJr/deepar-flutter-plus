@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:deepar_flutter_plus/deepar_flutter_plus.dart';
 import 'package:flutter/material.dart';
 
@@ -32,7 +33,7 @@ class ARView extends StatefulWidget {
 }
 
 class _ARViewState extends State<ARView> {
-  final DeepArController _controller = DeepArController();
+  final DeepArControllerPlus _controller = DeepArControllerPlus();
   bool isInitialized = false;
   final String effectURL = 'YOUR_EFFECT_URL_HERE';
 
@@ -46,8 +47,8 @@ class _ARViewState extends State<ARView> {
     try {
       // Initialize DeepAR
       await _controller.initialize(
-        androidLicenseKey: "<YOUR-ANDROID-LICENSE-KEY>", 
-        iosLicenseKey: "<YOUR-IOS-LICENSE-KEY>", 
+        androidLicenseKey: "<YOUR-ANDROID-LICENSE-KEY>",
+        iosLicenseKey: "<YOUR-IOS-LICENSE-KEY>",
         resolution: Resolution.medium,
       );
 
@@ -77,7 +78,7 @@ class _ARViewState extends State<ARView> {
     return isInitialized
         ? Transform.scale(
             scale: _controller.aspectRatio * 1.3, //change value as needed
-            child: DeepArPreview(_controller),
+            child: DeepArPreviewPlus(_controller),
           )
         : const Center(
             child: CircularProgressIndicator(),
