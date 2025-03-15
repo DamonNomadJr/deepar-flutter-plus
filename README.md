@@ -1,11 +1,11 @@
 # DeepAR Flutter Plus
 
-An enhanced version of the official DeepAR Flutter SDK that adds support for loading effects from both asset files AND file paths. This makes it possible to load effects that are downloaded or stored anywhere on the device's filesystem, not just from assets.
+An enhanced version of the official DeepAR Flutter SDK that adds support for loading effects from assets, file paths, and URLs with caching. This makes it possible to load effects that are downloaded or stored anywhere on the device's filesystem, or directly from the internet with automatic caching.
 
-This plugin is the official SDK for [DeepAR](http://deepar.ai). Platforms supported: Android & iOS. 
+This plugin is a fork of the official SDK for [DeepAR](https://deepar.ai). Platforms supported: Android & iOS. 
 
 The current version of plugin supports: 
-- Load effects from both assets and file paths ✨ (New!)
+- Load effects from assets, file paths, and URLs with caching ✨ (New!)
 - Live AR previews ✅ 
 - Take screenshots ✅ 
 - Record Videos ✅ 
@@ -34,6 +34,7 @@ Also add the following permission requests in your AndroidManifest.xml
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.INTERNET" />
 ```
 
 Ensure to add these rules to `proguard-rules.pro` else app might crash in release build
@@ -104,19 +105,28 @@ Widget build(BuildContext context) {
 }
 ```
 
-To display the preview in full screen, wrap `DeepArPreview` with `Transform.scale()` and use the correct scale factor as per preview area size. More info [here](https://github.com/DeepARSDK/deepar-flutter-plugin/issues/61#issuecomment-1331683622).
+To display the preview in full screen, wrap `DeepArPreview` with `Transform.scale()` and use the correct scale factor as per preview area size. More info [here](https://github.com/Ifoegbu1/deepar-flutter-plus/blob/main/example/lib/a_r_view.dart).
        
-3. Load effects using either asset files or file paths:
+3. Load effects, filters, or masks using assets, file paths, or URLs:
 
 ```dart
 // Using asset file
-_controller.switchEffect("assets/effects/my_effect.deepar");
+await _controller.switchEffect("assets/effects/my_effect.deepar");
 
 // Using file path
-_controller.switchEffect("/path/to/effect/file.deepar");
+await _controller.switchEffect("/path/to/effect/file.deepar");
+
+// Using URL (automatically cached)
+await _controller.switchEffect("https://example.com/effects/my_effect.deepar");
+
+// Same applies for filters and masks
+await _controller.switchFilter("https://example.com/filters/beauty.deepar");
+await _controller.switchFaceMask("https://example.com/masks/funny_mask.deepar");
 ```
 
-Note: When using file paths, make sure the app has proper permissions to access the file location. For downloaded effects, consider storing them in the app's documents or temporary directory.
+Note: 
+- When using file paths, make sure the app has proper permissions to access the file location
+- When using URLs, effects are automatically cached for better performance and offline access
 
 4. To take a picture, use `takeScreenshot()` which returns the picture as file.
 ```dart

@@ -1,13 +1,16 @@
+import 'dart:developer';
 import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
 
-import 'resolution_preset.dart';
-import 'deep_ar_platform_handler.dart';
-import 'platform_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'utils.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
+
+import 'deep_ar_platform_handler.dart';
+import 'platform_strings.dart';
+import 'resolution_preset.dart';
+import 'utils.dart';
 
 /// Controls all interaction with DeepAR Sdk.
 class DeepArController {
@@ -178,8 +181,26 @@ class DeepArController {
     return File(_file!);
   }
 
-  ///Switch DeepAR with the passed [effect] path from assets
-  Future<String?> switchEffect(String? effect) {
+  ///Switch DeepAR with the passed [effect] path from assets, file paths or URL
+  Future<String?> switchEffect(String effect) async {
+    try {
+      final uri = Uri.parse(effect);
+      if (uri.isAbsolute) {
+        // Check if it's a valid URL
+        // Get file from cache or download it
+        final file = await DefaultCacheManager().getSingleFile(effect);
+
+        return platformRun(
+            androidFunction: () =>
+                _deepArPlatformHandler.switchEffectAndroid(file.path),
+            iOSFunction: () =>
+                _deepArPlatformHandler.switchCameraIos(file.path, _textureId!));
+      }
+    } catch (e, s) {
+      log('Network Effect Error', error: e, stackTrace: s);
+      // Not a URL, treat as asset path
+    }
+
     return platformRun(
         androidFunction: () =>
             _deepArPlatformHandler.switchEffectAndroid(effect),
@@ -200,8 +221,26 @@ class DeepArController {
             .switchEffectWithSlotIos(_textureId!, slot: slot, path: path));
   }
 
-  ///Switch DeepAR with the passed [mask] path from assets
-  Future<String?> switchFaceMask(String? mask) {
+  ///Switch DeepAR with the passed [mask] path from assets, file path or URL
+  Future<String?> switchFaceMask(String mask) async {
+
+    try {
+      final uri = Uri.parse(mask);
+      if (uri.isAbsolute) { // Check if it's a valid URL
+        // Get file from cache or download it
+        final file = await DefaultCacheManager().getSingleFile(mask);
+        
+        return platformRun(
+            androidFunction: () => 
+                _deepArPlatformHandler.switchFaceMaskAndroid(file.path),
+            iOSFunction: () =>
+                _deepArPlatformHandler.switchFaceMaskIos(file.path, _textureId!));
+      }
+    } catch (e, s) {
+      log('Network Face Mask Error', error: e, stackTrace: s);
+      // Not a URL, treat as asset path
+    }
+
     return platformRun(
         androidFunction: () =>
             _deepArPlatformHandler.switchFaceMaskAndroid(mask),
@@ -209,8 +248,27 @@ class DeepArController {
             _deepArPlatformHandler.switchFaceMaskIos(mask, _textureId!));
   }
 
-  ///Switch DeepAR with the passed [filter] path from assets
-  Future<String?> switchFilter(String? filter) {
+  ///Switch DeepAR with the passed [filter] path from assets, file path or URL
+  Future<String?> switchFilter(String filter) async {
+
+
+    try {
+      final uri = Uri.parse(filter);
+      if (uri.isAbsolute) { // Check if it's a valid URL
+        // Get file from cache or download it
+        final file = await DefaultCacheManager().getSingleFile(filter);
+        
+        return platformRun(
+            androidFunction: () =>
+                _deepArPlatformHandler.switchFilterAndroid(file.path),
+            iOSFunction: () =>
+                _deepArPlatformHandler.switchFilterIos(file.path, _textureId!));
+      }
+    } catch (e, s) {
+      log('Network Filter Error', error: e, stackTrace: s);
+      // Not a URL, treat as asset path
+    }
+
     return platformRun(
         androidFunction: () =>
             _deepArPlatformHandler.switchFilterAndroid(filter),

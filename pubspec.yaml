@@ -1,6 +1,6 @@
 name: deepar_flutter_plus
-description: Enhanced DeepAR Flutter SDK with support for loading effects from both assets and file paths
-version: 0.0.6
+description: Enhanced DeepAR Flutter SDK with support for loading effects from assets, file paths, and URLs with caching
+version: 0.0.7
 homepage: https://www.deepar.ai/
 repository: https://github.com/Ifoegbu1/deepar-flutter-plus
 
@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   permission_handler: ^10.0.0
   vector_math: ^2.1.4
+  flutter_cache_manager: ^3.4.1
 
 dev_dependencies:
   flutter_lints: ^1.0.0
