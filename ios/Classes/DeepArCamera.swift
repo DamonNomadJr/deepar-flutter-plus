@@ -100,23 +100,41 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
         switch call.method{
         case "switch_effect":
             let effect:String = args?["effect"] as! String
-            let key = registrar?.lookupKey(forAsset: effect)
-            let path = Bundle.main.path(forResource: key, ofType: nil)
-            deepAR.switchEffect(withSlot: "effect", path: path)
+            // Check if it's a file path
+            if FileManager.default.fileExists(atPath: effect) {
+                deepAR.switchEffect(withSlot: "effect", path: effect)
+            } else {
+                // Try as asset
+                let key = registrar?.lookupKey(forAsset: effect)
+                let path = Bundle.main.path(forResource: key, ofType: nil)
+                deepAR.switchEffect(withSlot: "effect", path: path)
+            }
             result("switchEffect called successfully")
             
         case "switch_face_mask":
             let mask:String = args?["effect"] as! String
-            let key = registrar?.lookupKey(forAsset: mask)
-            let path = Bundle.main.path(forResource: key, ofType: nil)
-            deepAR.switchEffect(withSlot: "mask", path: path)
+            // Check if it's a file path
+            if FileManager.default.fileExists(atPath: mask) {
+                deepAR.switchEffect(withSlot: "mask", path: mask)
+            } else {
+                // Try as asset
+                let key = registrar?.lookupKey(forAsset: mask)
+                let path = Bundle.main.path(forResource: key, ofType: nil)
+                deepAR.switchEffect(withSlot: "mask", path: path)
+            }
             result("switchFaceMask called successfully")
             
         case "switch_filter":
             let filter:String = args?["effect"] as! String
-            let key = registrar?.lookupKey(forAsset: filter)
-            let path = Bundle.main.path(forResource: key, ofType: nil)
-            deepAR.switchEffect(withSlot: "filters", path: path)
+            // Check if it's a file path
+            if FileManager.default.fileExists(atPath: filter) {
+                deepAR.switchEffect(withSlot: "filters", path: filter)
+            } else {
+                // Try as asset
+                let key = registrar?.lookupKey(forAsset: filter)
+                let path = Bundle.main.path(forResource: key, ofType: nil)
+                deepAR.switchEffect(withSlot: "filters", path: path)
+            }
             result("switchFilter called successfully")
             
         case "switchEffectWithSlot":
@@ -126,10 +144,20 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
             let targetGameObject = args?["targetGameObject"] as? String
             let isGameTargetEmpty = String.isNilOrEmpty(string: targetGameObject)
             
+            // Check if it's a file path
+            let effectPath: String
+            if FileManager.default.fileExists(atPath: path) {
+                effectPath = path
+            } else {
+                // Try as asset
+                let key = registrar?.lookupKey(forAsset: path)
+                effectPath = Bundle.main.path(forResource: key, ofType: nil) ?? path
+            }
+            
             if !isGameTargetEmpty {
-                deepAR.switchEffect(withSlot: slot, path: path, face: face, targetGameObject: targetGameObject)
-            }else{
-                deepAR.switchEffect(withSlot: slot, path: path, face: face)
+                deepAR.switchEffect(withSlot: slot, path: effectPath, face: face, targetGameObject: targetGameObject)
+            } else {
+                deepAR.switchEffect(withSlot: slot, path: effectPath, face: face)
             }
             result("switchEffectWithSlot called successfully")
             

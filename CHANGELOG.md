@@ -1,3 +1,9 @@
+## 0.0.9
+
+- Added enhanced iOS support for effect loading 📱
+  - Support for loading effects, filters and masks from URLs and file paths
+
+
 ## 0.0.8
 
 - Renamed core classes to include "Plus" suffix for better clarity 🏷️
