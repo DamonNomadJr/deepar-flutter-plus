@@ -180,31 +180,32 @@ class DeepArControllerPlus {
     return File(_file!);
   }
 
-  ///Switch DeepAR with the passed [effect] path from assets, file paths or URL
-  Future<String?> switchEffect(String effect) async {
+  /// Helper function to handle file caching and path resolution
+  /// Returns the file path for the effect, either from cache or local assets
+  Future<String> _resolveEffectPath(String path, String effectType) async {
     try {
-      final uri = Uri.parse(effect);
+      final uri = Uri.parse(path);
       if (uri.isAbsolute) {
         // Check if it's a valid URL
         // Get file from cache or download it
-        final file = await DefaultCacheManager().getSingleFile(effect);
-
-        return platformRun(
-            androidFunction: () =>
-                _deepArPlatformHandler.switchEffectAndroid(file.path),
-            iOSFunction: () =>
-                _deepArPlatformHandler.switchCameraIos(file.path, _textureId!));
+        final file = await DefaultCacheManager().getSingleFile(path);
+        return file.path;
       }
     } catch (e, s) {
-      log('Network Effect Error', error: e, stackTrace: s);
+      log('Network $effectType Error', error: e, stackTrace: s);
       // Not a URL, treat as asset path
     }
+    return path;
+  }
 
+  ///Switch DeepAR with the passed [effect] path from assets, file paths or URL
+  Future<String?> switchEffect(String effect) async {
+    final effectPath = await _resolveEffectPath(effect, 'Effect');
     return platformRun(
         androidFunction: () =>
-            _deepArPlatformHandler.switchEffectAndroid(effect),
+            _deepArPlatformHandler.switchEffectAndroid(effectPath),
         iOSFunction: () =>
-            _deepArPlatformHandler.switchCameraIos(effect, _textureId!));
+            _deepArPlatformHandler.switchCameraIos(effectPath, _textureId!));
   }
 
   ///Load contents of a DeepAR Studio file as an effect/filter in the scene
@@ -222,56 +223,22 @@ class DeepArControllerPlus {
 
   ///Switch DeepAR with the passed [mask] path from assets, file path or URL
   Future<String?> switchFaceMask(String mask) async {
-    try {
-      final uri = Uri.parse(mask);
-      if (uri.isAbsolute) {
-        // Check if it's a valid URL
-        // Get file from cache or download it
-        final file = await DefaultCacheManager().getSingleFile(mask);
-
-        return platformRun(
-            androidFunction: () =>
-                _deepArPlatformHandler.switchFaceMaskAndroid(file.path),
-            iOSFunction: () => _deepArPlatformHandler.switchFaceMaskIos(
-                file.path, _textureId!));
-      }
-    } catch (e, s) {
-      log('Network Face Mask Error', error: e, stackTrace: s);
-      // Not a URL, treat as asset path
-    }
-
+    final maskPath = await _resolveEffectPath(mask, 'Face Mask');
     return platformRun(
         androidFunction: () =>
-            _deepArPlatformHandler.switchFaceMaskAndroid(mask),
+            _deepArPlatformHandler.switchFaceMaskAndroid(maskPath),
         iOSFunction: () =>
-            _deepArPlatformHandler.switchFaceMaskIos(mask, _textureId!));
+            _deepArPlatformHandler.switchFaceMaskIos(maskPath, _textureId!));
   }
 
   ///Switch DeepAR with the passed [filter] path from assets, file path or URL
   Future<String?> switchFilter(String filter) async {
-    try {
-      final uri = Uri.parse(filter);
-      if (uri.isAbsolute) {
-        // Check if it's a valid URL
-        // Get file from cache or download it
-        final file = await DefaultCacheManager().getSingleFile(filter);
-
-        return platformRun(
-            androidFunction: () =>
-                _deepArPlatformHandler.switchFilterAndroid(file.path),
-            iOSFunction: () =>
-                _deepArPlatformHandler.switchFilterIos(file.path, _textureId!));
-      }
-    } catch (e, s) {
-      log('Network Filter Error', error: e, stackTrace: s);
-      // Not a URL, treat as asset path
-    }
-
+    final filterPath = await _resolveEffectPath(filter, 'Filter');
     return platformRun(
         androidFunction: () =>
-            _deepArPlatformHandler.switchFilterAndroid(filter),
+            _deepArPlatformHandler.switchFilterAndroid(filterPath),
         iOSFunction: () =>
-            _deepArPlatformHandler.switchFilterIos(filter, _textureId!));
+            _deepArPlatformHandler.switchFilterIos(filterPath, _textureId!));
   }
 
   ///Moves the selected game object from its current position in a tree and sets it as a direct child of a target game object.

@@ -1,15 +1,17 @@
+## 0.1.0
+
+- Code Refactoring 🔄
+
 ## 0.0.9
 
 - Added enhanced iOS support for effect loading 📱
   - Support for loading effects, filters and masks from URLs and file paths
-
 
 ## 0.0.8
 
 - Renamed core classes to include "Plus" suffix for better clarity 🏷️
   - `DeepArController` → `DeepArControllerPlus`
   - `DeepArPreview` → `DeepArPreviewPlus`
-  
 
 ## 0.0.7
 
@@ -18,7 +20,6 @@
   - File paths (e.g., "/path/to/effect/file.deepar")
   - URLs (e.g., "https://example.com/effects/effect.deepar")
 - Added automatic caching for downloaded effects
-
 
 ## 0.0.6
 
