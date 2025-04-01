@@ -1,3 +1,7 @@
+## 0.1.1
+
+- Fixed Android build issue with newer versions of Android Gradle Plugin 🛠️
+
 ## 0.1.0
 
 - Code Refactoring 🔄
