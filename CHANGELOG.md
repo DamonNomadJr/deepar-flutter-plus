@@ -1,3 +1,8 @@
+## 0.1.3
+
+- Added issue tracker URL to package metadata 📋
+- Improved package discoverability on pub.dev
+
 ## 0.1.2
 
 - Fixed iOS build error: 'deepar_flutter-Swift.h' file not found 🛠️
