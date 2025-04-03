@@ -3,6 +3,7 @@ description: Enhanced DeepAR Flutter SDK with support for loading effects from a
 version: 0.1.2
 homepage: https://www.deepar.ai/
 repository: https://github.com/Ifoegbu1/deepar-flutter-plus
+issue_tracker: https://github.com/Ifoegbu1/deepar-flutter-plus/issues
 
 environment:
   sdk: ">=2.16.1 <4.0.0"
