@@ -1,3 +1,8 @@
+## 0.1.2
+
+- Fixed iOS build error: 'deepar_flutter-Swift.h' file not found 🛠️
+- Updated module name in podspec to match package name
+
 ## 0.1.1
 
 - Fixed Android build issue with newer versions of Android Gradle Plugin 🛠️

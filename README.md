@@ -2,15 +2,15 @@
 
 An enhanced version of the official DeepAR Flutter SDK that adds support for loading effects from assets, file paths, and URLs with caching. This makes it possible to load effects that are downloaded or stored anywhere on the device's filesystem, or directly from the internet with automatic caching.
 
-This plugin is a fork of the official SDK for [DeepAR](https://pub.dev/packages/deepar_flutter). Platforms supported: Android & iOS. 
+This plugin is a fork of the official SDK for [DeepAR](https://pub.dev/packages/deepar_flutter). Platforms supported: Android & iOS.
 
-The current version of plugin supports: 
+The current version of plugin supports:
 - Load effects from assets, file paths, and URLs with caching ✨ (New!)
-- Live AR previews ✅ 
-- Take screenshots ✅ 
-- Record Videos ✅ 
-- Flip camera ✅ 
-- Toggle Flash ✅ 
+- Live AR previews ✅
+- Take screenshots ✅
+- Record Videos ✅
+- Flip camera ✅
+- Toggle Flash ✅
 
 | Support |Android  | iOS|
 |--|--|--|
@@ -18,15 +18,19 @@ The current version of plugin supports:
 
 
 ## Installation
-Please visit the [developer website](https://developer.deepar.ai) to create a project and generate your separate license keys for both platforms. 
+Please visit the [developer website](https://developer.deepar.ai) to create a project and generate your separate license keys for both platforms.
 
-Once done, please add the latest `deepar_flutter_plus` dependency to your pubspec.yaml. 
+Once done, please add the latest `deepar_flutter_plus` dependency to your pubspec.yaml.
 
-**Android**: 
+**Android**:
  1. compileSdkVersion should be 33 or more.
  2. minSdkVersion should be 23 or more.
  3. Download the native android dependencies from the [downloads](https://developer.deepar.ai/downloads) section and paste it in your flutter project at `android/app/libs/deepar.aar`.
  4. Make sure to `pub clean` & `flutter pub upgrade` to fetch latest working code.
+
+**iOS**:
+ 1. iOS 13.0+ is required.
+ 2. If you encounter the error `'deepar_flutter-Swift.h' file not found`, make sure you're using the latest version of the plugin which fixes this issue.
 
 Also add the following permission requests in your AndroidManifest.xml
 ```xml
@@ -42,7 +46,7 @@ Ensure to add these rules to `proguard-rules.pro` else app might crash in releas
 -keepclassmembers class ai.deepar.ar.DeepAR { *; }
 -keepclassmembers class ai.deepar.ar.core.videotexture.VideoTextureAndroidJava { *; }
 -keep class ai.deepar.ar.core.videotexture.VideoTextureAndroidJava
-``` 
+```
 
 **iOS:**
 1. Ensure your app iOS deployment version is 13.0+.
@@ -72,10 +76,10 @@ post_install do |installer|
          'PERMISSION_CAMERA=1',
 
         ## dart: PermissionGroup.microphone
-         'PERMISSION_MICROPHONE=1',    
+         'PERMISSION_MICROPHONE=1',
       ]
 
-    end 
+    end
     # End of the permission_handler configuration
   end
 end
@@ -93,7 +97,7 @@ _controller.initialize(
     resolution: Resolution.medium);
 ```
 
-2. Place the DeepArPreviewPlus widget in your widget tree to display the preview. 
+2. Place the DeepArPreviewPlus widget in your widget tree to display the preview.
 ```dart
 @override
 Widget build(BuildContext context) {
@@ -106,7 +110,7 @@ Widget build(BuildContext context) {
 ```
 
 To display the preview in full screen, wrap `DeepArPreviewPlus` with `Transform.scale()` and use the correct scale factor as per preview area size. See example [here](https://github.com/Ifoegbu1/deepar-flutter-plus/blob/main/example/lib/main.dart).
-       
+
 3. Load effects, filters, or masks using assets, file paths, or URLs:
 
 ```dart
@@ -124,7 +128,7 @@ await _controller.switchFilter("https://example.com/filters/beauty.deepar");
 await _controller.switchFaceMask("https://example.com/masks/funny_mask.deepar");
 ```
 
-Note: 
+Note:
 - When using file paths, make sure the app has proper permissions to access the file location
 - When using URLs, effects are automatically cached for better performance and offline access
 
@@ -133,7 +137,7 @@ Note:
 final File file = await _controller.takeScreenshot();
 ```
 
-5. To record a video, please use: 
+5. To record a video, please use:
 ```dart
 if (_controller.isRecording) {
     _controller.stopVideoRecording();

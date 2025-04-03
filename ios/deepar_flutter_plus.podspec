@@ -4,12 +4,12 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'deepar_flutter_plus'
-  s.version          = '0.0.5'
-  s.summary          = 'Offical Flutter SDK for DeepAR Plugin.'
+  s.version          = '0.1.2'
+  s.summary          = 'Enhanced Flutter SDK for DeepAR with extended functionality.'
   s.description      = <<-DESC
-Official Flutter SDK for DeepAR Plugin.
+An enhanced version of the official DeepAR Flutter SDK that adds support for loading AR effects from multiple sources including assets, file paths, and URLs with automatic caching.
                        DESC
-  s.homepage         = 'http://deepar.ai'
+  s.homepage         = 'https://deepar.ai'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Deepar.ai' => 'support@deepar.ai' }
   s.source           = { :path => '.' }
@@ -20,6 +20,7 @@ Official Flutter SDK for DeepAR Plugin.
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  s.module_name = 'deepar_flutter_plus'
   s.swift_version = '5.0'
 
   s.preserve_paths = 'DeepAR.framework/**/*'
