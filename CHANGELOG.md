@@ -1,3 +1,16 @@
+## 0.1.4
+
+- Fixed controller initialization and camera issues ([#2](https://github.com/Ifoegbu1/deepar-flutter-plus/issues/2)) 🛠️
+  - Added safeguards for Android BufferQueue abandonment issues
+  - Fixed "dequeueBuffer: BufferQueue has been abandoned" errors during quick init/destroy cycles
+  - Added protection against race conditions in controller lifecycle
+  - Improved resource cleanup to prevent memory leaks
+  - Enhanced controller state management for more reliable operation
+  - Properly reset controller state during destroy
+  - Improved initialization process with better error handling
+  - Added safeguards for reinitializing the controller
+
+
 ## 0.1.3
 
 - Added issue tracker URL to package metadata 📋

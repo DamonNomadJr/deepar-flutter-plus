@@ -34,7 +34,24 @@ class DeepArControllerPlus {
   ///Return true if the camera preview is initialized
   ///
   ///For [iOS], please call the function after [DeepArPreviewPlus] widget has been built.
-  bool get isInitialized => _textureId != null;
+  bool get isInitialized {
+    // Check if textureId is set, which indicates the native resources are initialized
+    if (_textureId == null) {
+      return false;
+    }
+
+    // Additional platform-specific checks
+    if (Platform.isAndroid) {
+      // For Android, having a valid textureId is sufficient
+      return true;
+    } else if (Platform.isIOS) {
+      // For iOS, we need both textureId and imageSize to be set
+      // since textureId is set in onPlatformViewCreated callback
+      return _imageSize != null && _aspectRatio != null;
+    }
+
+    return false;
+  }
 
   ///If the user has allowed required camera permissions
   bool get hasPermission => _hasPermission;
@@ -61,6 +78,11 @@ class DeepArControllerPlus {
   ///Get current  camera direction as [CameraDirection.front] or [CameraDirection.rear]
   CameraDirection get cameraDirection => _cameraDirection;
 
+  // Track initialization/destruction state to prevent race conditions
+  bool _isInitializing = false;
+  bool _isDestroying = false;
+  DateTime? _lastDestroyTime;
+
   ///Initializes the DeepAR SDK with license keys and asks for required camera and microphone permissions.
   ///Returns false if fails to initialize.
   ///
@@ -75,31 +97,123 @@ class DeepArControllerPlus {
     assert(androidLicenseKey != null || iosLicenseKey != null,
         "Both android and iOS license keys cannot be null");
 
-    _iosLicenseKey = iosLicenseKey;
-    _resolution = resolution;
-    _hasPermission = await _askMediaPermission();
-
-    if (!_hasPermission) return false;
-
-    if (Platform.isAndroid) {
-      assert(androidLicenseKey != null, "androidLicenseKey missing");
-      String? dimensions = await _deepArPlatformHandler.initialize(
-          androidLicenseKey!, resolution);
-      if (dimensions != null) {
-        _imageSize = sizeFromEncodedString(dimensions);
-        _aspectRatio = _imageSize!.width / _imageSize!.height;
-        _textureId = await _deepArPlatformHandler.startCameraAndroid();
-        return true;
-      }
-    } else if (Platform.isIOS) {
-      assert(iosLicenseKey != null, "iosLicenseKey missing");
-      _imageSize = iOSImageSizeFromResolution(resolution);
-      _aspectRatio = _imageSize!.width / _imageSize!.height;
-      return true;
-    } else {
-      throw ("Platform not supported");
+    // Prevent concurrent initialization
+    if (_isInitializing) {
+      debugPrint("DeepAR initialization already in progress. Skipping.");
+      return false;
     }
-    return false;
+
+    // Set initializing flag
+    _isInitializing = true;
+
+    try {
+      // If already initialized, destroy first to ensure clean state
+      if (_textureId != null) {
+        debugPrint(
+            "DeepAR controller is already initialized. Destroying previous instance before re-initializing.");
+        await destroy();
+      }
+
+      // Check if we need to wait after a recent destroy operation
+      if (_lastDestroyTime != null) {
+        final timeSinceDestroy = DateTime.now().difference(_lastDestroyTime!);
+        const minimumWaitTime = Duration(milliseconds: 500);
+
+        if (timeSinceDestroy < minimumWaitTime) {
+          // Need to wait longer after destroy
+          final waitTime = minimumWaitTime - timeSinceDestroy;
+          debugPrint(
+              "Waiting ${waitTime.inMilliseconds}ms after destroy before reinitializing");
+          await Future.delayed(waitTime);
+        }
+      }
+
+      // Reset state to ensure clean initialization
+      _resetState();
+
+      _iosLicenseKey = iosLicenseKey;
+      _resolution = resolution;
+      _hasPermission = await _askMediaPermission();
+
+      if (!_hasPermission) {
+        debugPrint("Camera or microphone permission denied");
+        return false;
+      }
+
+      if (Platform.isAndroid) {
+        assert(androidLicenseKey != null, "androidLicenseKey missing");
+        debugPrint("Initializing DeepAR on Android");
+
+        // Try initialization with retries for Android
+        String? dimensions;
+        int retryCount = 0;
+        const maxRetries = 2;
+
+        while (dimensions == null && retryCount <= maxRetries) {
+          try {
+            dimensions = await _deepArPlatformHandler.initialize(
+                androidLicenseKey!, resolution);
+          } catch (e) {
+            debugPrint(
+                "Error during Android initialization attempt ${retryCount + 1}: $e");
+            if (retryCount < maxRetries) {
+              // Wait before retry
+              await Future.delayed(const Duration(milliseconds: 300));
+            }
+          }
+          retryCount++;
+        }
+
+        if (dimensions != null) {
+          _imageSize = sizeFromEncodedString(dimensions);
+          _aspectRatio = _imageSize!.width / _imageSize!.height;
+
+          // Start camera with retry mechanism
+          int cameraRetryCount = 0;
+          const maxCameraRetries = 2;
+          bool cameraStarted = false;
+
+          while (!cameraStarted && cameraRetryCount <= maxCameraRetries) {
+            try {
+              _textureId = await _deepArPlatformHandler.startCameraAndroid();
+              cameraStarted = true;
+              debugPrint(
+                  "DeepAR initialized successfully on Android with textureId: $_textureId");
+            } catch (e) {
+              debugPrint(
+                  "Error starting camera on attempt ${cameraRetryCount + 1}: $e");
+              if (cameraRetryCount < maxCameraRetries) {
+                await Future.delayed(const Duration(milliseconds: 300));
+              }
+            }
+            cameraRetryCount++;
+          }
+
+          return cameraStarted;
+        } else {
+          debugPrint(
+              "Failed to get dimensions from DeepAR initialization after retries");
+          return false;
+        }
+      } else if (Platform.isIOS) {
+        assert(iosLicenseKey != null, "iosLicenseKey missing");
+        debugPrint("Initializing DeepAR on iOS");
+        _imageSize = iOSImageSizeFromResolution(resolution);
+        _aspectRatio = _imageSize!.width / _imageSize!.height;
+        // Note: On iOS, _textureId is set later in buildPreview's onPlatformViewCreated
+        debugPrint(
+            "DeepAR partially initialized on iOS. Will complete when view is created.");
+        return true;
+      } else {
+        throw ("Platform not supported");
+      }
+    } catch (e) {
+      debugPrint("Error during DeepAR initialization: $e");
+      _resetState();
+      return false;
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   ///Builds and returns the DeepAR Camera Preview.
@@ -113,32 +227,58 @@ class DeepArControllerPlus {
   ///See: https://api.flutter.dev/flutter/widgets/Texture-class.html
   ///https://docs.flutter.dev/development/platform-integration/ios/platform-views
   Widget buildPreview({Function? oniOSViewCreated}) {
-    if (Platform.isAndroid) {
-      return Texture(textureId: _textureId!);
-    } else if (Platform.isIOS) {
-      return UiKitView(
-          viewType: "deep_ar_view",
-          layoutDirection: TextDirection.ltr,
-          creationParams: <String, dynamic>{
-            PlatformStrings.licenseKey: _iosLicenseKey,
-            PlatformStrings.resolution: _resolution.stringValue
-          },
-          creationParamsCodec: const StandardMessageCodec(),
-          onPlatformViewCreated: ((id) {
-            _textureId = id;
-            _deepArPlatformHandler
-                .getResolutionDimensions(_textureId!)
-                .then((value) {
-              if (value != null) {
-                _imageSize = sizeFromEncodedString(value);
-                _aspectRatio = _imageSize!.width / _imageSize!.height;
-              }
-              _setNativeListenerIos();
-              oniOSViewCreated?.call();
-            });
-          }));
-    } else {
-      throw ("Platform not supported.");
+    try {
+      if (Platform.isAndroid) {
+        if (_textureId == null) {
+          debugPrint(
+              "Error: Attempting to build preview with null textureId on Android");
+          return const SizedBox
+              .shrink(); // Return empty widget instead of crashing
+        }
+        return Texture(textureId: _textureId!);
+      } else if (Platform.isIOS) {
+        if (_iosLicenseKey == null) {
+          debugPrint(
+              "Error: Attempting to build iOS preview with null license key");
+          return const SizedBox.shrink();
+        }
+
+        return UiKitView(
+            viewType: "deep_ar_view",
+            layoutDirection: TextDirection.ltr,
+            creationParams: <String, dynamic>{
+              PlatformStrings.licenseKey: _iosLicenseKey,
+              PlatformStrings.resolution: _resolution.stringValue
+            },
+            creationParamsCodec: const StandardMessageCodec(),
+            onPlatformViewCreated: ((id) {
+              debugPrint("iOS platform view created with id: $id");
+              _textureId = id;
+              _deepArPlatformHandler
+                  .getResolutionDimensions(_textureId!)
+                  .then((value) {
+                if (value != null) {
+                  _imageSize = sizeFromEncodedString(value);
+                  _aspectRatio = _imageSize!.width / _imageSize!.height;
+                  debugPrint(
+                      "iOS view dimensions set: $_imageSize, aspect ratio: $_aspectRatio");
+                } else {
+                  debugPrint("Warning: Failed to get iOS view dimensions");
+                }
+                _setNativeListenerIos();
+                oniOSViewCreated?.call();
+              }).catchError((error) {
+                debugPrint("Error getting iOS view dimensions: $error");
+                oniOSViewCreated?.call();
+              });
+            }));
+      } else {
+        debugPrint("Platform not supported for DeepAR");
+        return const SizedBox.shrink();
+      }
+    } catch (e) {
+      debugPrint("Error building DeepAR preview: $e");
+      return const SizedBox.shrink();
     }
   }
 
@@ -353,9 +493,44 @@ class DeepArControllerPlus {
 
   ///Releases all resources required by DeepAR.
   Future<void> destroy() async {
-    await platformRun(
-        androidFunction: _deepArPlatformHandler.destroy,
-        iOSFunction: () => _deepArPlatformHandler.destroyIos(_textureId!));
+    // Prevent concurrent destroy operations
+    if (_isDestroying) {
+      debugPrint("DeepAR destroy already in progress. Skipping.");
+      return;
+    }
+
+    if (_textureId == null) {
+      debugPrint("DeepAR controller is already destroyed or not initialized");
+      return;
+    }
+
+    _isDestroying = true;
+
+    try {
+      debugPrint("Destroying DeepAR controller with textureId: $_textureId");
+      await platformRun(
+          androidFunction: _deepArPlatformHandler.destroy,
+          iOSFunction: () => _deepArPlatformHandler.destroyIos(_textureId!));
+      debugPrint("DeepAR controller destroyed successfully");
+    } catch (e) {
+      debugPrint("Error during DeepAR destroy: $e");
+    } finally {
+      // Reset controller state regardless of success/failure
+      _resetState();
+      // Record the time of destruction for initialization cooldown
+      _lastDestroyTime = DateTime.now();
+      _isDestroying = false;
+    }
+  }
+
+  /// Resets the internal state of the controller
+  void _resetState() {
+    _textureId = null;
+    _isRecording = false;
+    _flashState = false;
+    _cameraDirection = CameraDirection.front;
+    // Don't reset _imageSize and _aspectRatio as they depend on resolution
+    // which doesn't change between initializations
   }
 
   ///Listen to native delegate methods

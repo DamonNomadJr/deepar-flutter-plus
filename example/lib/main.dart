@@ -53,14 +53,9 @@ class _ARViewState extends State<ARView> {
       );
 
       _controller.switchEffect(effectURL);
-      Future.delayed(
-        const Duration(seconds: 2),
-        () {
-          setState(() {
-            isInitialized = true;
-          });
-        },
-      );
+        setState(() {
+        isInitialized = true;
+      });
     } catch (e, s) {
       log('Error initializing AR: $e', stackTrace: s);
     }

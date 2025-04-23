@@ -136,7 +136,7 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
                     videoFilePath = file.getPath();
                     deepAR.startVideoRecording(videoFilePath);
                     result.success("Video recording started");
-                
+
                 } catch (Exception e) {
                     e.printStackTrace();
                     Log.e("DeepAR", "Error : Unable to create file");
@@ -171,7 +171,7 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
                     e.printStackTrace();
                     result.error("111", "switchMask failed", e.getMessage());
                 }
-                
+
                 break;
 
             case "switch_filter":
@@ -286,7 +286,7 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
                 else if (newParameter instanceof Double){
                     deepAR.changeParameterFloat(gameObject, component, parameter, ((Double) newParameter).floatValue());
                     result.success("changeParameter called successfully");
-                } 
+                }
                 else if (newParameter instanceof String) {
                     try {
                         InputStream inputStream = _getAssetFileInputStream((String) newParameter);
@@ -311,9 +311,11 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
 
     private void setCameraXChannel(CameraResolutionPreset resolutionPreset) {
         cameraXChannel = new MethodChannel(flutterPlugin.getBinaryMessenger(), MethodStrings.cameraXChannel);
-        final CameraXHandler handler = new CameraXHandler(activity,
+        // Use the new SafeCameraXHandler instead of CameraXHandler
+        final SafeCameraXHandler handler = new SafeCameraXHandler(activity,
                 textureId, deepAR, resolutionPreset);
         cameraXChannel.setMethodCallHandler(handler);
+        Log.d(TAG, "Using SafeCameraXHandler for better stability");
     }
 
     @Override
@@ -340,27 +342,91 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
 
     private boolean initializeDeepAR(String licenseKey, CameraResolutionPreset resolutionPreset) {
         try {
+            // Clean up any existing resources first
+            if (deepAR != null) {
+                Log.d(TAG, "Cleaning up existing DeepAR instance before initialization");
+                try {
+                    deepAR.setAREventListener(null);
+                    deepAR.release();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error cleaning up existing DeepAR instance", e);
+                }
+                deepAR = null;
+            }
 
+            if (surface != null) {
+                try {
+                    surface.release();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error releasing surface", e);
+                }
+                surface = null;
+            }
+
+            if (tempSurfaceTexture != null) {
+                try {
+                    tempSurfaceTexture.release();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error releasing surface texture", e);
+                }
+                tempSurfaceTexture = null;
+            }
+
+            // Initialize with proper error handling
             int width = resolutionPreset.getHeight();
             int height = resolutionPreset.getWidth();
+
+            Log.d(TAG, "Creating new DeepAR instance");
             deepAR = new DeepAR(activity);
             deepAR.setLicenseKey(licenseKey);
             deepAR.initialize(activity, this);
             deepAR.changeLiveMode(true);
 
+            Log.d(TAG, "Creating surface texture");
             TextureRegistry.SurfaceTextureEntry entry = flutterPlugin.getTextureRegistry().createSurfaceTexture();
             tempSurfaceTexture = entry.surfaceTexture();
             tempSurfaceTexture.setDefaultBufferSize(width, height);
             surface = new Surface(tempSurfaceTexture);
+
+            Log.d(TAG, "Setting render surface");
             deepAR.setRenderSurface(surface, width, height);
             textureId = entry.id();
 
+            Log.d(TAG, "DeepAR initialized successfully with textureId: " + textureId);
             return true;
         } catch (Exception e) {
-            Log.e(TAG, "ERROR" + e);
+            Log.e(TAG, "Error initializing DeepAR", e);
+            // Clean up any partially initialized resources
+            if (deepAR != null) {
+                try {
+                    deepAR.setAREventListener(null);
+                    deepAR.release();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Error cleaning up after failed initialization", ex);
+                }
+                deepAR = null;
+            }
+
+            if (surface != null) {
+                try {
+                    surface.release();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Error releasing surface after failed initialization", ex);
+                }
+                surface = null;
+            }
+
+            if (tempSurfaceTexture != null) {
+                try {
+                    tempSurfaceTexture.release();
+                } catch (Exception ex) {
+                    Log.e(TAG, "Error releasing surface texture after failed initialization", ex);
+                }
+                tempSurfaceTexture = null;
+            }
+
             return false;
         }
-
     }
 
     @Override
