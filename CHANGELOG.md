@@ -1,3 +1,9 @@
+## 0.1.6
+
+- Fixed iOS framework linking errors 🛠️
+  - Resolved "Undefined symbol" linker errors in iOS builds
+  - Fixed framework search paths to properly locate DeepAR.framework
+
 ## 0.1.5
 
 - Fixed iOS podspec configuration for DeepAR.framework 🛠️
