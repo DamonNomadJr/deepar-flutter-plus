@@ -1,3 +1,9 @@
+## 0.1.5
+
+- Fixed iOS podspec configuration for DeepAR.framework 🛠️
+  - Updated preserve_paths to correctly reference the framework
+  - Improved xcconfig settings for better iOS integration
+
 ## 0.1.4
 
 - Fixed controller initialization and camera issues ([#2](https://github.com/Ifoegbu1/deepar-flutter-plus/issues/2)) 🛠️
