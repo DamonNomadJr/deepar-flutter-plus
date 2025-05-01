@@ -46,16 +46,20 @@ class _ARViewState extends State<ARView> {
   Future<void> _initializeAR() async {
     try {
       // Initialize DeepAR
-      await _controller.initialize(
+      final result = await _controller.initialize(
         androidLicenseKey: "<YOUR-ANDROID-LICENSE-KEY>",
         iosLicenseKey: "<YOUR-IOS-LICENSE-KEY>",
         resolution: Resolution.medium,
       );
 
-      _controller.switchEffect(effectURL);
+      if (result.success) {
+        _controller.switchEffect(effectURL);
         setState(() {
-        isInitialized = true;
-      });
+          isInitialized = true;
+        });
+      } else {
+        log('Failed to initialize AR: ${result.message}');
+      }
     } catch (e, s) {
       log('Error initializing AR: $e', stackTrace: s);
     }

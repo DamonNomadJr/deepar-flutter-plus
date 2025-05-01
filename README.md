@@ -16,6 +16,7 @@ The current version of plugin supports:
 |--|--|--|
 |  |SDK 23+  |  iOS 13.0+|
 
+> ⚠️ **BREAKING CHANGE in v0.1.7**: The `initialize()` method now returns an `InitializeResult` object with `success` and `message` properties instead of just a boolean. See the [initialization section](#flutter) for updated usage.
 
 ## Installation
 Please visit the [developer website](https://developer.deepar.ai) to create a project and generate your separate license keys for both platforms.
@@ -86,15 +87,23 @@ end
 ```
 
 
-**Flutter:**
+<a name="flutter"></a>**Flutter:**
 
 1. Initialize  `DeepArControllerPlus` by passing in your license keys for both platforms.
 ```dart
 final DeepArControllerPlus _controller = DeepArControllerPlus();
-_controller.initialize(
+final result = await _controller.initialize(
     androidLicenseKey:"---android key---",
     iosLicenseKey:"---iOS key---",
     resolution: Resolution.medium);
+
+if (result.success) {
+  // Initialization successful
+  print("Initialization successful: ${result.message}");
+} else {
+  // Initialization failed
+  print("Initialization failed: ${result.message}");
+}
 ```
 
 2. Place the DeepArPreviewPlus widget in your widget tree to display the preview.

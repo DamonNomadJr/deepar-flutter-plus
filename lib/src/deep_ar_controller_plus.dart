@@ -12,6 +12,18 @@ import 'platform_strings.dart';
 import 'resolution_preset.dart';
 import 'utils.dart';
 
+/// Result of the initialize method containing success status and a message
+class InitializeResult {
+  /// Whether initialization was successful
+  final bool success;
+
+  /// Message describing the result of initialization
+  final String message;
+
+  /// Creates a new [InitializeResult]
+  const InitializeResult({required this.success, required this.message});
+}
+
 /// Controls all interaction with DeepAR Sdk.
 class DeepArControllerPlus {
   late final DeepArPlatformHandler _deepArPlatformHandler;
@@ -84,12 +96,12 @@ class DeepArControllerPlus {
   DateTime? _lastDestroyTime;
 
   ///Initializes the DeepAR SDK with license keys and asks for required camera and microphone permissions.
-  ///Returns false if fails to initialize.
+  ///Returns an [InitializeResult] with success status and a message describing the result.
   ///
   ///[androidLicenseKey] and [iosLicenseKey] both cannot be null together.
   ///
   ///Recommended resolution: [Resolution.medium] for optimum quality without performance tradeoffs
-  Future<bool> initialize({
+  Future<InitializeResult> initialize({
     required String? androidLicenseKey,
     required String? iosLicenseKey,
     Resolution resolution = Resolution.medium,
@@ -100,7 +112,8 @@ class DeepArControllerPlus {
     // Prevent concurrent initialization
     if (_isInitializing) {
       debugPrint("DeepAR initialization already in progress. Skipping.");
-      return false;
+      return const InitializeResult(
+          success: false, message: "Initialization already in progress");
     }
 
     // Set initializing flag
@@ -137,7 +150,8 @@ class DeepArControllerPlus {
 
       if (!_hasPermission) {
         debugPrint("Camera or microphone permission denied");
-        return false;
+        return const InitializeResult(
+            success: false, message: "Camera or microphone permission denied");
       }
 
       if (Platform.isAndroid) {
@@ -148,12 +162,14 @@ class DeepArControllerPlus {
         String? dimensions;
         int retryCount = 0;
         const maxRetries = 2;
+        String errorMessage = "";
 
         while (dimensions == null && retryCount <= maxRetries) {
           try {
             dimensions = await _deepArPlatformHandler.initialize(
                 androidLicenseKey!, resolution);
           } catch (e) {
+            errorMessage = "Error during Android initialization: $e";
             debugPrint(
                 "Error during Android initialization attempt ${retryCount + 1}: $e");
             if (retryCount < maxRetries) {
@@ -172,6 +188,7 @@ class DeepArControllerPlus {
           int cameraRetryCount = 0;
           const maxCameraRetries = 2;
           bool cameraStarted = false;
+          String cameraErrorMessage = "";
 
           while (!cameraStarted && cameraRetryCount <= maxCameraRetries) {
             try {
@@ -180,6 +197,7 @@ class DeepArControllerPlus {
               debugPrint(
                   "DeepAR initialized successfully on Android with textureId: $_textureId");
             } catch (e) {
+              cameraErrorMessage = "Error starting camera: $e";
               debugPrint(
                   "Error starting camera on attempt ${cameraRetryCount + 1}: $e");
               if (cameraRetryCount < maxCameraRetries) {
@@ -189,11 +207,25 @@ class DeepArControllerPlus {
             cameraRetryCount++;
           }
 
-          return cameraStarted;
+          if (cameraStarted) {
+            return const InitializeResult(
+                success: true,
+                message: "DeepAR initialized successfully on Android");
+          } else {
+            return InitializeResult(
+                success: false,
+                message: cameraErrorMessage.isNotEmpty
+                    ? cameraErrorMessage
+                    : "Failed to start camera after multiple attempts");
+          }
         } else {
           debugPrint(
               "Failed to get dimensions from DeepAR initialization after retries");
-          return false;
+          return InitializeResult(
+              success: false,
+              message: errorMessage.isNotEmpty
+                  ? errorMessage
+                  : "Failed to get dimensions from DeepAR initialization after retries");
         }
       } else if (Platform.isIOS) {
         assert(iosLicenseKey != null, "iosLicenseKey missing");
@@ -203,14 +235,18 @@ class DeepArControllerPlus {
         // Note: On iOS, _textureId is set later in buildPreview's onPlatformViewCreated
         debugPrint(
             "DeepAR partially initialized on iOS. Will complete when view is created.");
-        return true;
+        return const InitializeResult(
+            success: true,
+            message:
+                "DeepAR partially initialized on iOS. Will complete when view is created.");
       } else {
         throw ("Platform not supported");
       }
     } catch (e) {
       debugPrint("Error during DeepAR initialization: $e");
       _resetState();
-      return false;
+      return InitializeResult(
+          success: false, message: "Error during DeepAR initialization: $e");
     } finally {
       _isInitializing = false;
     }

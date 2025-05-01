@@ -1,3 +1,11 @@
+## 0.1.7
+
+- **BREAKING CHANGE**: Changed `initialize()` method to return `InitializeResult` with success status and message 🚨
+  - Previously returned only a boolean value
+  - Now returns an object with `success` (boolean) and `message` (string) properties
+  - Provides more detailed information about initialization results
+  - Requires updating code that calls `initialize()` to handle the new return type
+
 ## 0.1.6
 
 - Fixed iOS framework linking errors 🛠️
