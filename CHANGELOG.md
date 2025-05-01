@@ -1,3 +1,11 @@
+## 0.1.8
+
+- Fixed iOS camera initialization issues 🛠️
+  - Added better error handling and debugging for iOS initialization
+  - Improved platform view creation process with proper timing
+  - Added fallback dimensions when native dimensions can't be retrieved
+  - Enhanced example app with iOS-specific initialization handling
+
 ## 0.1.7
 
 - **BREAKING CHANGE**: Changed `initialize()` method to return `InitializeResult` with success status and message 🚨
@@ -5,12 +13,6 @@
   - Now returns an object with `success` (boolean) and `message` (string) properties
   - Provides more detailed information about initialization results
   - Requires updating code that calls `initialize()` to handle the new return type
-
-- Fixed iOS camera initialization issues 🛠️
-  - Added better error handling and debugging for iOS initialization
-  - Improved platform view creation process with proper timing
-  - Added fallback dimensions when native dimensions can't be retrieved
-  - Enhanced example app with iOS-specific initialization handling
 
 ## 0.1.6
 
