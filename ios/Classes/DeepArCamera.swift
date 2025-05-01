@@ -11,7 +11,7 @@ import AVKit
 extension String {
     static func isNilOrEmpty(string: String?) -> Bool {
         guard let value = string else { return true }
-        
+
         return value.trimmingCharacters(in: .whitespaces).isEmpty
     }
 }
@@ -33,13 +33,13 @@ enum DeepArResponse: String {
 class DeepARCameraFactory: NSObject, FlutterPlatformViewFactory {
     private var messenger: FlutterBinaryMessenger
     private var registrar: FlutterPluginRegistrar
-    
+
     init(messenger: FlutterBinaryMessenger, registrar: FlutterPluginRegistrar) {
         self.messenger = messenger
         self.registrar = registrar;
         super.init()
     }
-    
+
     func create(
         withFrame frame: CGRect,
         viewIdentifier viewId: Int64,
@@ -59,21 +59,21 @@ class DeepARCameraFactory: NSObject, FlutterPlatformViewFactory {
 
 class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
     private var isRecordingInProcess: Bool = false
-    
+
     private var deepAR: DeepAR!
     private var cameraController: CameraController!
     private var arView: ARView!
     private var frame:CGRect!
-    
-    
+
+
     private var pictureQuality:PictureQuality!
     private var licenseKey:String!
     private var videoFilePath:String!
     private var screenshotFilePath:String!
-    
+
     private var channel:FlutterMethodChannel!
     private var registrar: FlutterPluginRegistrar!
-    
+
     init(
         frame: CGRect,
         viewIdentifier viewId: Int64,
@@ -92,25 +92,44 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
         channel.setMethodCallHandler(methodHandler);
         createNativeView()
     }
-    
-    
-    
+
+
+
     func methodHandler(_ call: FlutterMethodCall, result: @escaping FlutterResult){
         let args = call.arguments as? [String : Any]
         switch call.method{
         case "switch_effect":
-            let effect:String = args?["effect"] as! String
+            guard let effect = args?["effect"] as? String else {
+                result(FlutterError(code: "MISSING_PARAM", message: "Missing effect parameter", details: nil))
+                return
+            }
+
+            print("iOS switchEffect called with path: \(effect)")
+
             // Check if it's a file path
             if FileManager.default.fileExists(atPath: effect) {
+                print("iOS: Loading effect from file path: \(effect)")
                 deepAR.switchEffect(withSlot: "effect", path: effect)
-            } else {
-                // Try as asset
-                let key = registrar?.lookupKey(forAsset: effect)
-                let path = Bundle.main.path(forResource: key, ofType: nil)
-                deepAR.switchEffect(withSlot: "effect", path: path)
+                result("Effect loaded from file path")
+                return
             }
-            result("switchEffect called successfully")
-            
+
+            // Try as asset
+            if let key = registrar?.lookupKey(forAsset: effect) {
+                if let path = Bundle.main.path(forResource: key, ofType: nil) {
+                    print("iOS: Loading effect from asset: \(path)")
+                    deepAR.switchEffect(withSlot: "effect", path: path)
+                    result("Effect loaded from asset")
+                    return
+                } else {
+                    print("iOS: Asset not found: \(key)")
+                }
+            }
+
+            // If we get here, the effect couldn't be loaded
+            print("iOS: Failed to load effect: \(effect)")
+            result(FlutterError(code: "EFFECT_NOT_FOUND", message: "Effect not found: \(effect)", details: nil))
+
         case "switch_face_mask":
             let mask:String = args?["effect"] as! String
             // Check if it's a file path
@@ -123,7 +142,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
                 deepAR.switchEffect(withSlot: "mask", path: path)
             }
             result("switchFaceMask called successfully")
-            
+
         case "switch_filter":
             let filter:String = args?["effect"] as! String
             // Check if it's a file path
@@ -136,14 +155,14 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
                 deepAR.switchEffect(withSlot: "filters", path: path)
             }
             result("switchFilter called successfully")
-            
+
         case "switchEffectWithSlot":
             let slot:String = args?["slot"] as! String
             let path:String = args?["path"] as! String
             let face = args?["face"] as! Int
             let targetGameObject = args?["targetGameObject"] as? String
             let isGameTargetEmpty = String.isNilOrEmpty(string: targetGameObject)
-            
+
             // Check if it's a file path
             let effectPath: String
             if FileManager.default.fileExists(atPath: path) {
@@ -153,15 +172,15 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
                 let key = registrar?.lookupKey(forAsset: path)
                 effectPath = Bundle.main.path(forResource: key, ofType: nil) ?? path
             }
-            
+
             if !isGameTargetEmpty {
                 deepAR.switchEffect(withSlot: slot, path: effectPath, face: face, targetGameObject: targetGameObject)
             } else {
                 deepAR.switchEffect(withSlot: slot, path: effectPath, face: face)
             }
             result("switchEffectWithSlot called successfully")
-            
-            
+
+
         case "start_recording_video":
             startRecordingVideo();
             result("STARTING_TO_RECORD");
@@ -205,13 +224,13 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
             let component:String = args?["component"] as! String
             let parameter:String = args?["parameter"] as! String
             let newParameter = args?["newParameter"]
-            
+
             if newParameter == nil  {
                 let x = Float(args?["x"] as! Double)
                 let y = Float(args?["y"] as! Double)
                 let z = Float(args?["z"] as! Double)
                 let w = args?["w"]
-                
+
                 if w == nil {
                     let vector3:Vector3 = Vector3(x: x , y: y, z: z)
                     deepAR.changeParameter(gameObject, component: component, parameter: parameter, vector3Value: vector3 )
@@ -219,7 +238,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
                     let vector4:Vector4 = Vector4(x: x , y: y, z: z, w: Float(w as! Double) )
                     deepAR.changeParameter(gameObject, component: component, parameter: parameter, vectorValue: vector4 )
                 }
-                
+
             }
             else if newParameter is Bool {
                 deepAR.changeParameter(gameObject, component: component, parameter: parameter, boolValue: newParameter as! Bool )
@@ -232,7 +251,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
             }
 
             result("changeParameter called successfully")
-            
+
         case "destroy":
             cameraController.stopCamera()
             deepAR.shutdown()
@@ -240,55 +259,55 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
         default:
             result("No platform method found")
         }
-        
+
     }
-    
+
     func view() -> UIView {
         return arView
     }
-    
+
     func createNativeView(){
         self.deepAR = DeepAR()
         self.deepAR.delegate = self
         self.deepAR.setLicenseKey(licenseKey)
-        
+
         cameraController = CameraController()
-        
+
         cameraController.preset = presetForPictureQuality(pictureQuality: pictureQuality);
         cameraController.videoOrientation = .portrait;
         cameraController.deepAR = self.deepAR
         self.deepAR.videoRecordingWarmupEnabled = false;
-        
-        
+
+
         deepAR.changeLiveMode(true);
-        
+
         self.arView = self.deepAR.createARView(withFrame: self.frame) as? ARView
         cameraController.startCamera()
-        
+
         NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
     }
-    
+
     func toggleFlash() -> Bool {
         if cameraController.position == .front {
             // Prevent flash when front camera is on
             return false
         }
-        
+
         guard let captureDevice = AVCaptureDevice.default(for: AVMediaType.video) else {
             return false
         }
-        
+
         if captureDevice.hasTorch {
             do {
                 let _: () = try captureDevice.lockForConfiguration()
             } catch {
                 print("Error while lockForConfiguration()")
             }
-            
+
             if captureDevice.isTorchActive {
                 captureDevice.torchMode = AVCaptureDevice.TorchMode.off
             } else {
-                
+
                 do {
                     let _ = try captureDevice.setTorchModeOn(level: 1.0)
                     return true // flash ON
@@ -296,62 +315,62 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
                     print("Error while setTorchModeOn()")
                 }
             }
-            
+
             captureDevice.unlockForConfiguration()
         }
-        
+
         return false // flash OFF
     }
-    
-    
+
+
     func startRecordingVideo(){
         let width: Int32 = Int32(deepAR.renderingResolution.width)
         let height: Int32 =  Int32(deepAR.renderingResolution.height)
-        
+
         deepAR.startVideoRecording(withOutputWidth: width, outputHeight: height)
         isRecordingInProcess = true
     }
-    
+
     func finishRecordingVideo(){
         deepAR.finishVideoRecording();
     }
-    
+
     func didFinishPreparingForVideoRecording() {
         NSLog("didFinishPreparingForVideoRecording!!!!!")
     }
-    
+
     func didStartVideoRecording() {
         NSLog("didStartVideoRecording!!!!!")
         videoResult(callerResponse: DeepArResponse.videoStarted, message: "video started")
     }
-    
+
     func recordingFailedWithError(_ error: Error!) {
         NSLog("recordingFailedWithError!!!!!")
         videoResult(callerResponse: DeepArResponse.videoError, message: "video error")
     }
-    
+
     func didFinishVideoRecording(_ videoFilePath: String!) {
-        
+
         NSLog("didFinishVideoRecording!!!!!")
         self.videoFilePath = videoFilePath
         videoResult(callerResponse: DeepArResponse.videoCompleted, message: "video completed")
     }
-    
+
     func didFinishShutdown (){
         NSLog("didFinishShutdown!!!!!")
     }
-    
+
     func didTakeScreenshot(_ screenshot: UIImage!) {
         if let data = screenshot.pngData() {
-            
+
             let filename = FileManager.default.urls(for: .documentDirectory, in:.userDomainMask)[0] .appendingPathComponent(String(NSDate().timeIntervalSince1970).replacingOccurrences(of: ".", with: "-") + ".png")
             try? data.write(to: filename)
             screenshotFilePath = filename.path;
             screenshotResult(callerResponse: DeepArResponse.screenshotTaken, message: "Screenshot_taken")
         }
-        
+
     }
-    
+
     func presetForPictureQuality(pictureQuality: PictureQuality) -> AVCaptureSession.Preset {
         switch pictureQuality {
         case .low:
@@ -364,7 +383,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
             return AVCaptureSession.Preset.hd1920x1080;
         }
     }
-    
+
     func resolutionForPictureQuality (pictureQuality: PictureQuality) -> CGSize {
         switch pictureQuality {
         case .low:
@@ -377,7 +396,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
             return CGSize(width: 1920, height: 1080);
         }
     }
-    
+
     func videoResult(callerResponse: DeepArResponse, message: String) {
         var map = [String : String]()
         map["caller"] = callerResponse.rawValue
@@ -385,7 +404,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
         if callerResponse == DeepArResponse.videoCompleted {
             map["file_path"] = videoFilePath
         }
-        
+
         channel.invokeMethod("on_video_result", arguments: map)
     }
     func screenshotResult(callerResponse: DeepArResponse, message: String) {
@@ -395,10 +414,10 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
         if callerResponse == DeepArResponse.screenshotTaken {
             map["file_path"] = screenshotFilePath
         }
-        
+
         channel.invokeMethod("on_screenshot_result", arguments: map)
     }
-    
+
     @objc
     private func orientationDidChange() {
         guard let orientation = UIApplication.shared.windows.first?.windowScene?.interfaceOrientation else { return }
@@ -417,6 +436,6 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
         default:
             break
         }
-        
+
     }
 }

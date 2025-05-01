@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'resolution_preset.dart';
 import 'platform_strings.dart';
+import 'resolution_preset.dart';
 
 enum VideoResponse { videoStarted, videoCompleted, videoError }
 
@@ -90,6 +90,7 @@ class DeepArPlatformHandler {
   }
 
   Future<String?> switchCameraIos(String? effect, int view) {
+    debugPrint("Switching effect on iOS: $effect");
     return _avCameraChannel(view)
         .invokeMethod<String>(PlatformStrings.switchEffect, {
       PlatformStrings.effect: effect,

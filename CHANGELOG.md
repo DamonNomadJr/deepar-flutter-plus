@@ -6,6 +6,12 @@
   - Added fallback dimensions when native dimensions can't be retrieved
   - Enhanced example app with iOS-specific initialization handling
 
+- Fixed iOS effect loading issues 🛠️
+  - Improved error handling and debugging for effect loading on iOS
+  - Enhanced path resolution for effects from assets, file paths, and URLs
+  - Added proper error reporting when effects can't be found or loaded
+  - Fixed issues with asset path resolution on iOS
+
 ## 0.1.7
 
 - **BREAKING CHANGE**: Changed `initialize()` method to return `InitializeResult` with success status and message 🚨

@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -386,18 +385,39 @@ class DeepArControllerPlus {
   /// Helper function to handle file caching and path resolution
   /// Returns the file path for the effect, either from cache or local assets
   Future<String> _resolveEffectPath(String path, String effectType) async {
+    debugPrint('Resolving $effectType path: $path');
+
+    // Check if it's an absolute file path
+    if (path.startsWith('/')) {
+      final file = File(path);
+      if (await file.exists()) {
+        debugPrint('Using existing file path: $path');
+        return path;
+      } else {
+        debugPrint('File does not exist at path: $path');
+      }
+    }
+
+    // Try to parse as URL
     try {
       final uri = Uri.parse(path);
-      if (uri.isAbsolute) {
-        // Check if it's a valid URL
-        // Get file from cache or download it
-        final file = await DefaultCacheManager().getSingleFile(path);
-        return file.path;
+      if (uri.isAbsolute && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        debugPrint('Downloading from URL: $path');
+        try {
+          final file = await DefaultCacheManager().getSingleFile(path);
+          debugPrint('Downloaded and cached at: ${file.path}');
+          return file.path;
+        } catch (e) {
+          debugPrint('Failed to download from URL: $e');
+          // Fall through to asset path
+        }
       }
-    } catch (e, s) {
-      log('Network $effectType Error', error: e, stackTrace: s);
-      // Not a URL, treat as asset path
+    } catch (e) {
+      debugPrint('Not a valid URL, treating as asset path: $e');
     }
+
+    // If we get here, treat as asset path
+    debugPrint('Using as asset path: $path');
     return path;
   }
 
