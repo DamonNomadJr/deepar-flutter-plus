@@ -100,6 +100,24 @@ final result = await _controller.initialize(
 if (result.success) {
   // Initialization successful
   print("Initialization successful: ${result.message}");
+
+  // For iOS, you need to wait for the platform view to be fully created
+  if (Platform.isIOS) {
+    // Check initialization status periodically
+    Timer.periodic(Duration(milliseconds: 500), (timer) {
+      if (_controller.isInitialized) {
+        print('iOS view is now fully initialized');
+        setState(() {
+          // Update your UI to show the camera preview
+        });
+        timer.cancel();
+      } else if (timer.tick > 20) {
+        // Timeout after 10 seconds
+        print('Timeout waiting for iOS view initialization');
+        timer.cancel();
+      }
+    });
+  }
 } else {
   // Initialization failed
   print("Initialization failed: ${result.message}");

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:deepar_flutter_plus/deepar_flutter_plus.dart';
 import 'package:flutter/material.dart';
@@ -52,17 +54,45 @@ class _ARViewState extends State<ARView> {
         resolution: Resolution.medium,
       );
 
+      log('AR initialization result: ${result.success}, message: ${result.message}');
+
       if (result.success) {
         _controller.switchEffect(effectURL);
-        setState(() {
-          isInitialized = true;
-        });
+
+        // For iOS, we need to wait for the platform view to be created
+        if (Platform.isIOS) {
+          log('iOS platform detected, waiting for view initialization');
+          // Check initialization status periodically
+          _checkIOSInitialization();
+        } else {
+          setState(() {
+            isInitialized = true;
+          });
+        }
       } else {
         log('Failed to initialize AR: ${result.message}');
       }
     } catch (e, s) {
       log('Error initializing AR: $e', stackTrace: s);
     }
+  }
+
+  // Helper method to check iOS initialization status
+  void _checkIOSInitialization() {
+    // Start a timer to check initialization status
+    Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      if (_controller.isInitialized) {
+        log('iOS view is now initialized');
+        setState(() {
+          isInitialized = true;
+        });
+        timer.cancel();
+      } else if (timer.tick > 20) {
+        // Timeout after 10 seconds
+        log('Timeout waiting for iOS view initialization');
+        timer.cancel();
+      }
+    });
   }
 
   @override

@@ -49,6 +49,7 @@ class DeepArControllerPlus {
   bool get isInitialized {
     // Check if textureId is set, which indicates the native resources are initialized
     if (_textureId == null) {
+      debugPrint("DeepAR not initialized: textureId is null");
       return false;
     }
 
@@ -59,7 +60,15 @@ class DeepArControllerPlus {
     } else if (Platform.isIOS) {
       // For iOS, we need both textureId and imageSize to be set
       // since textureId is set in onPlatformViewCreated callback
-      return _imageSize != null && _aspectRatio != null;
+      if (_imageSize == null) {
+        debugPrint("DeepAR iOS not fully initialized: imageSize is null");
+        return false;
+      }
+      if (_aspectRatio == null) {
+        debugPrint("DeepAR iOS not fully initialized: aspectRatio is null");
+        return false;
+      }
+      return true;
     }
 
     return false;
@@ -290,22 +299,40 @@ class DeepArControllerPlus {
             onPlatformViewCreated: ((id) {
               debugPrint("iOS platform view created with id: $id");
               _textureId = id;
-              _deepArPlatformHandler
-                  .getResolutionDimensions(_textureId!)
-                  .then((value) {
-                if (value != null) {
-                  _imageSize = sizeFromEncodedString(value);
+
+              // Set up native listener first to ensure we don't miss any callbacks
+              _setNativeListenerIos();
+
+              // Add a small delay to ensure the view is fully created before getting dimensions
+              Future.delayed(const Duration(milliseconds: 100), () {
+                _deepArPlatformHandler
+                    .getResolutionDimensions(_textureId!)
+                    .then((value) {
+                  if (value != null) {
+                    _imageSize = sizeFromEncodedString(value);
+                    _aspectRatio = _imageSize!.width / _imageSize!.height;
+                    debugPrint(
+                        "iOS view dimensions set: $_imageSize, aspect ratio: $_aspectRatio");
+                  } else {
+                    debugPrint("Warning: Failed to get iOS view dimensions");
+                    // Fallback to default dimensions if we can't get them from the platform
+                    _imageSize = iOSImageSizeFromResolution(_resolution);
+                    _aspectRatio = _imageSize!.width / _imageSize!.height;
+                    debugPrint(
+                        "Using fallback dimensions: $_imageSize, aspect ratio: $_aspectRatio");
+                  }
+
+                  // Notify that iOS view is created and initialized
+                  oniOSViewCreated?.call();
+                }).catchError((error) {
+                  debugPrint("Error getting iOS view dimensions: $error");
+                  // Fallback to default dimensions on error
+                  _imageSize = iOSImageSizeFromResolution(_resolution);
                   _aspectRatio = _imageSize!.width / _imageSize!.height;
                   debugPrint(
-                      "iOS view dimensions set: $_imageSize, aspect ratio: $_aspectRatio");
-                } else {
-                  debugPrint("Warning: Failed to get iOS view dimensions");
-                }
-                _setNativeListenerIos();
-                oniOSViewCreated?.call();
-              }).catchError((error) {
-                debugPrint("Error getting iOS view dimensions: $error");
-                oniOSViewCreated?.call();
+                      "Using fallback dimensions after error: $_imageSize, aspect ratio: $_aspectRatio");
+                  oniOSViewCreated?.call();
+                });
               });
             }));
       } else {
