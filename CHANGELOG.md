@@ -1,3 +1,11 @@
+## 0.1.9
+
+- Updated iOS implementation for new DeepAR SDK 🚀
+  - Fixed compatibility issues with the latest DeepAR SDK
+  - Updated code to use the new API structure
+  - Removed references to deprecated ARView class
+  - Improved error handling for effect loading
+
 ## 0.1.8
 
 - Fixed iOS camera initialization issues 🛠️

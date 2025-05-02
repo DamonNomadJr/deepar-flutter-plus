@@ -18,7 +18,9 @@ The current version of plugin supports:
 
 > ⚠️ **BREAKING CHANGE in v0.1.7**: The `initialize()` method now returns an `InitializeResult` object with `success` and `message` properties instead of just a boolean. See the [initialization section](#flutter) for updated usage.
 >
-> **New in v0.1.8**: Fixed iOS camera initialization issues with improved error handling and platform view creation.
+> **New in v0.1.9**: Updated iOS implementation for the latest DeepAR SDK with improved compatibility and effect loading.
+>
+> **New in v0.1.8**: Improved iOS camera initialization with better error handling and platform view creation.
 
 ## Installation
 Please visit the [developer website](https://developer.deepar.ai) to create a project and generate your separate license keys for both platforms.

@@ -62,7 +62,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
 
     private var deepAR: DeepAR!
     private var cameraController: CameraController!
-    private var arView: ARView!
+    private var arView: UIView!
     private var frame:CGRect!
 
 
