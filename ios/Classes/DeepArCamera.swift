@@ -281,7 +281,7 @@ class DeepARCameraView: NSObject, FlutterPlatformView, DeepARDelegate {
 
         deepAR.changeLiveMode(true);
 
-        self.arView = self.deepAR.createARView(withFrame: self.frame) as? ARView
+        self.arView = self.deepAR.createARView(withFrame: self.frame)
         cameraController.startCamera()
 
         NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
