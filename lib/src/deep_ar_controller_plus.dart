@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ class DeepArControllerPlus {
   bool get isInitialized {
     // Check if textureId is set, which indicates the native resources are initialized
     if (_textureId == null) {
-      debugPrint("DeepAR not initialized: textureId is null");
+      log("DeepAR not initialized: textureId is null");
       return false;
     }
 
@@ -60,11 +61,11 @@ class DeepArControllerPlus {
       // For iOS, we need both textureId and imageSize to be set
       // since textureId is set in onPlatformViewCreated callback
       if (_imageSize == null) {
-        debugPrint("DeepAR iOS not fully initialized: imageSize is null");
+        log("DeepAR iOS not fully initialized: imageSize is null");
         return false;
       }
       if (_aspectRatio == null) {
-        debugPrint("DeepAR iOS not fully initialized: aspectRatio is null");
+        log("DeepAR iOS not fully initialized: aspectRatio is null");
         return false;
       }
       return true;
@@ -119,7 +120,7 @@ class DeepArControllerPlus {
 
     // Prevent concurrent initialization
     if (_isInitializing) {
-      debugPrint("DeepAR initialization already in progress. Skipping.");
+      log("DeepAR initialization already in progress. Skipping.");
       return const InitializeResult(
           success: false, message: "Initialization already in progress");
     }
@@ -130,8 +131,7 @@ class DeepArControllerPlus {
     try {
       // If already initialized, destroy first to ensure clean state
       if (_textureId != null) {
-        debugPrint(
-            "DeepAR controller is already initialized. Destroying previous instance before re-initializing.");
+        log("DeepAR controller is already initialized. Destroying previous instance before re-initializing.");
         await destroy();
       }
 
@@ -143,8 +143,7 @@ class DeepArControllerPlus {
         if (timeSinceDestroy < minimumWaitTime) {
           // Need to wait longer after destroy
           final waitTime = minimumWaitTime - timeSinceDestroy;
-          debugPrint(
-              "Waiting ${waitTime.inMilliseconds}ms after destroy before reinitializing");
+          log("Waiting ${waitTime.inMilliseconds}ms after destroy before reinitializing");
           await Future.delayed(waitTime);
         }
       }
@@ -157,14 +156,14 @@ class DeepArControllerPlus {
       _hasPermission = await _askMediaPermission();
 
       if (!_hasPermission) {
-        debugPrint("Camera or microphone permission denied");
+        log("Camera or microphone permission denied");
         return const InitializeResult(
             success: false, message: "Camera or microphone permission denied");
       }
 
       if (Platform.isAndroid) {
         assert(androidLicenseKey != null, "androidLicenseKey missing");
-        debugPrint("Initializing DeepAR on Android");
+        log("Initializing DeepAR on Android");
 
         // Try initialization with retries for Android
         String? dimensions;
@@ -178,8 +177,7 @@ class DeepArControllerPlus {
                 androidLicenseKey!, resolution);
           } catch (e) {
             errorMessage = "Error during Android initialization: $e";
-            debugPrint(
-                "Error during Android initialization attempt ${retryCount + 1}: $e");
+            log("Error during Android initialization attempt ${retryCount + 1}: $e");
             if (retryCount < maxRetries) {
               // Wait before retry
               await Future.delayed(const Duration(milliseconds: 300));
@@ -202,12 +200,10 @@ class DeepArControllerPlus {
             try {
               _textureId = await _deepArPlatformHandler.startCameraAndroid();
               cameraStarted = true;
-              debugPrint(
-                  "DeepAR initialized successfully on Android with textureId: $_textureId");
+              log("DeepAR initialized successfully on Android with textureId: $_textureId");
             } catch (e) {
               cameraErrorMessage = "Error starting camera: $e";
-              debugPrint(
-                  "Error starting camera on attempt ${cameraRetryCount + 1}: $e");
+              log("Error starting camera on attempt ${cameraRetryCount + 1}: $e");
               if (cameraRetryCount < maxCameraRetries) {
                 await Future.delayed(const Duration(milliseconds: 300));
               }
@@ -227,8 +223,7 @@ class DeepArControllerPlus {
                     : "Failed to start camera after multiple attempts");
           }
         } else {
-          debugPrint(
-              "Failed to get dimensions from DeepAR initialization after retries");
+          log("Failed to get dimensions from DeepAR initialization after retries");
           return InitializeResult(
               success: false,
               message: errorMessage.isNotEmpty
@@ -237,12 +232,12 @@ class DeepArControllerPlus {
         }
       } else if (Platform.isIOS) {
         assert(iosLicenseKey != null, "iosLicenseKey missing");
-        debugPrint("Initializing DeepAR on iOS");
+        log("Initializing DeepAR on iOS");
         _imageSize = iOSImageSizeFromResolution(resolution);
         _aspectRatio = _imageSize!.width / _imageSize!.height;
+
         // Note: On iOS, _textureId is set later in buildPreview's onPlatformViewCreated
-        debugPrint(
-            "DeepAR partially initialized on iOS. Will complete when view is created.");
+        log("DeepAR partially initialized on iOS. Will complete when view is created.");
         return const InitializeResult(
             success: true,
             message:
@@ -251,7 +246,7 @@ class DeepArControllerPlus {
         throw ("Platform not supported");
       }
     } catch (e) {
-      debugPrint("Error during DeepAR initialization: $e");
+      log("Error during DeepAR initialization: $e");
       _resetState();
       return InitializeResult(
           success: false, message: "Error during DeepAR initialization: $e");
@@ -274,16 +269,14 @@ class DeepArControllerPlus {
     try {
       if (Platform.isAndroid) {
         if (_textureId == null) {
-          debugPrint(
-              "Error: Attempting to build preview with null textureId on Android");
+          log("Error: Attempting to build preview with null textureId on Android");
           return const SizedBox
               .shrink(); // Return empty widget instead of crashing
         }
         return Texture(textureId: _textureId!);
       } else if (Platform.isIOS) {
         if (_iosLicenseKey == null) {
-          debugPrint(
-              "Error: Attempting to build iOS preview with null license key");
+          log("Error: Attempting to build iOS preview with null license key");
           return const SizedBox.shrink();
         }
 
@@ -296,7 +289,7 @@ class DeepArControllerPlus {
             },
             creationParamsCodec: const StandardMessageCodec(),
             onPlatformViewCreated: ((id) {
-              debugPrint("iOS platform view created with id: $id");
+              log("iOS platform view created with id: $id");
               _textureId = id;
 
               // Set up native listener first to ensure we don't miss any callbacks
@@ -310,36 +303,33 @@ class DeepArControllerPlus {
                   if (value != null) {
                     _imageSize = sizeFromEncodedString(value);
                     _aspectRatio = _imageSize!.width / _imageSize!.height;
-                    debugPrint(
-                        "iOS view dimensions set: $_imageSize, aspect ratio: $_aspectRatio");
+                    log("iOS view dimensions set: $_imageSize, aspect ratio: $_aspectRatio");
                   } else {
-                    debugPrint("Warning: Failed to get iOS view dimensions");
+                    log("Warning: Failed to get iOS view dimensions");
                     // Fallback to default dimensions if we can't get them from the platform
                     _imageSize = iOSImageSizeFromResolution(_resolution);
                     _aspectRatio = _imageSize!.width / _imageSize!.height;
-                    debugPrint(
-                        "Using fallback dimensions: $_imageSize, aspect ratio: $_aspectRatio");
+                    log("Using fallback dimensions: $_imageSize, aspect ratio: $_aspectRatio");
                   }
 
                   // Notify that iOS view is created and initialized
                   oniOSViewCreated?.call();
                 }).catchError((error) {
-                  debugPrint("Error getting iOS view dimensions: $error");
+                  log("Error getting iOS view dimensions: $error");
                   // Fallback to default dimensions on error
                   _imageSize = iOSImageSizeFromResolution(_resolution);
                   _aspectRatio = _imageSize!.width / _imageSize!.height;
-                  debugPrint(
-                      "Using fallback dimensions after error: $_imageSize, aspect ratio: $_aspectRatio");
+                  log("Using fallback dimensions after error: $_imageSize, aspect ratio: $_aspectRatio");
                   oniOSViewCreated?.call();
                 });
               });
             }));
       } else {
-        debugPrint("Platform not supported for DeepAR");
+        log("Platform not supported for DeepAR");
         return const SizedBox.shrink();
       }
     } catch (e) {
-      debugPrint("Error building DeepAR preview: $e");
+      log("Error building DeepAR preview: $e");
       return const SizedBox.shrink();
     }
   }
@@ -385,16 +375,16 @@ class DeepArControllerPlus {
   /// Helper function to handle file caching and path resolution
   /// Returns the file path for the effect, either from cache or local assets
   Future<String> _resolveEffectPath(String path, String effectType) async {
-    debugPrint('Resolving $effectType path: $path');
+    log('Resolving $effectType path: $path');
 
     // Check if it's an absolute file path
     if (path.startsWith('/')) {
       final file = File(path);
       if (await file.exists()) {
-        debugPrint('Using existing file path: $path');
+        log('Using existing file path: $path');
         return path;
       } else {
-        debugPrint('File does not exist at path: $path');
+        log('File does not exist at path: $path');
       }
     }
 
@@ -402,28 +392,31 @@ class DeepArControllerPlus {
     try {
       final uri = Uri.parse(path);
       if (uri.isAbsolute && (uri.scheme == 'http' || uri.scheme == 'https')) {
-        debugPrint('Downloading from URL: $path');
+        log('Downloading from URL: $path');
         try {
           final file = await DefaultCacheManager().getSingleFile(path);
-          debugPrint('Downloaded and cached at: ${file.path}');
+          log('Downloaded and cached at: ${file.path}');
           return file.path;
         } catch (e) {
-          debugPrint('Failed to download from URL: $e');
+          log('Failed to download from URL: $e');
           // Fall through to asset path
         }
       }
     } catch (e) {
-      debugPrint('Not a valid URL, treating as asset path: $e');
+      log('Not a valid URL, treating as asset path: $e');
     }
 
     // If we get here, treat as asset path
-    debugPrint('Using as asset path: $path');
+    log('Using as asset path: $path');
     return path;
   }
 
   ///Switch DeepAR with the passed [effect] path from assets, file paths or URL
   Future<String?> switchEffect(String effect) async {
-    final effectPath = await _resolveEffectPath(effect, 'Effect');
+    final effectPath = await _resolveEffectPath(effect, 'Effect').then((path) {
+      log('Resolved effect path: $path');
+      return path;
+    });
     return platformRun(
         androidFunction: () =>
             _deepArPlatformHandler.switchEffectAndroid(effectPath),
@@ -514,7 +507,7 @@ class DeepArControllerPlus {
           iOSFunction: () => _deepArPlatformHandler.changeParameterIos(
               _textureId!, arguments));
     } else {
-      debugPrint("Invalid datatype passed in newParameter");
+      log("Invalid datatype passed in newParameter");
       throw ("Invalid field newParameter. Please refer docs to pass correct value.");
     }
   }
@@ -578,25 +571,25 @@ class DeepArControllerPlus {
   Future<void> destroy() async {
     // Prevent concurrent destroy operations
     if (_isDestroying) {
-      debugPrint("DeepAR destroy already in progress. Skipping.");
+      log("DeepAR destroy already in progress. Skipping.");
       return;
     }
 
     if (_textureId == null) {
-      debugPrint("DeepAR controller is already destroyed or not initialized");
+      log("DeepAR controller is already destroyed or not initialized");
       return;
     }
 
     _isDestroying = true;
 
     try {
-      debugPrint("Destroying DeepAR controller with textureId: $_textureId");
+      log("Destroying DeepAR controller with textureId: $_textureId");
       await platformRun(
           androidFunction: _deepArPlatformHandler.destroy,
           iOSFunction: () => _deepArPlatformHandler.destroyIos(_textureId!));
-      debugPrint("DeepAR controller destroyed successfully");
+      log("DeepAR controller destroyed successfully");
     } catch (e) {
-      debugPrint("Error during DeepAR destroy: $e");
+      log("Error during DeepAR destroy: $e");
     } finally {
       // Reset controller state regardless of success/failure
       _resetState();
@@ -621,9 +614,8 @@ class DeepArControllerPlus {
     try {
       _deepArPlatformHandler.setListenerIos(_textureId!);
     } catch (e) {
-      debugPrint(
-          "Exception while setting iOS response listener, won't be able to notify flutter once files are available");
-      debugPrint("Error $e");
+      log("Exception while setting iOS response listener, won't be able to notify flutter once files are available");
+      log("Error $e");
     }
   }
 

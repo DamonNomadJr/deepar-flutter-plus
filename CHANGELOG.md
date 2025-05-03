@@ -1,3 +1,15 @@
+## 0.2.0
+
+- Version bump for new feature development 🚀
+  - Preparing for implementation of pause and resume camera methods
+  - Improved stability and performance
+
+- Fixed iOS camera reinitialization issue 🛠️
+  - Fixed white screen issue when destroying and recreating the controller on iOS
+  - Added proper cleanup and delay mechanisms for camera resources
+  - Improved camera initialization sequence to ensure proper restart
+  - Enhanced logging for better debugging
+
 ## 0.1.9
 
 - Updated iOS implementation for new DeepAR SDK 🚀
