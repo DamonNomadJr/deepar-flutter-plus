@@ -46,7 +46,7 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
     /// when the Flutter Engine is detached from the Activity
-    private MethodChannel cameraXChannel, channel;
+    private MethodChannel cameraXChannel, photoXChannel, channel;
 
     private final String TAG = "DEEPAR_LOGS";
     private Activity activity;
@@ -316,6 +316,15 @@ public class DeepArPlugin implements FlutterPlugin, AREventListener, ActivityAwa
                 textureId, deepAR, resolutionPreset);
         cameraXChannel.setMethodCallHandler(handler);
         Log.d(TAG, "Using SafeCameraXHandler for better stability");
+    }
+
+    private void setPhotoXChannel() {
+        Log.d(TAG, "Damon Starting Up Photo Handler");
+        photoXChannel = new MethodChannel(flutterPlugin.getBinaryMessenger(), MethodStrings.photoXChannel);
+        // Use the new SafeCameraXHandler instead of CameraXHandler
+        final PhotoXHandler handler = new PhotoXHandler();
+        photoXChannel.setMethodCallHandler(handler);
+        Log.d(TAG, "Damon Running Photo Handler");
     }
 
     @Override

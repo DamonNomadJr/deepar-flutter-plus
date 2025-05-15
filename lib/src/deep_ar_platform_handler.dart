@@ -16,6 +16,8 @@ class DeepArPlatformHandler {
       MethodChannel(PlatformStrings.generalChannel);
   static const MethodChannel _cameraXChannel =
       MethodChannel(PlatformStrings.cameraXChannel);
+  static const MethodChannel _photoXChannel =
+      MethodChannel(PlatformStrings.photoXChannel);
   MethodChannel _avCameraChannel(int view) =>
       MethodChannel(PlatformStrings.avCameraChannel + "/$view");
   static VideoResponse? _videoResponse;
@@ -80,6 +82,13 @@ class DeepArPlatformHandler {
   Future<int> startCameraAndroid() async {
     int texturedId =
         await _cameraXChannel.invokeMethod(PlatformStrings.startCamera);
+    return texturedId;
+  }
+
+  Future<int> startImageProcessingAndroid() async {
+    print("Damon: invoking method");
+    int texturedId =
+        await _photoXChannel.invokeMethod(PlatformStrings.startPhoto);
     return texturedId;
   }
 

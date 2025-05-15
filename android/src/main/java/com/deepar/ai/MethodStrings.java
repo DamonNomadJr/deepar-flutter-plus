@@ -5,14 +5,16 @@ public  class MethodStrings {
     // Platform channels
     public final static String generalChannel = "deep_ar";
     public final static String cameraXChannel = "deep_ar/camerax";
+    public final static String photoXChannel = "deep_ar/photox"
 
     // Methods
     public final static  String initialize = "initialize";
-    public final  static  String switchEffect = "switch_effect";
+    public final static  String switchEffect = "switch_effect";
     public final static  String startCamera = "start_camera";
+    public final static String startPhoto = "start_photo";
     public final static  String startRecordingVideo = "start_recording_video";
     public final static  String stopRecordingVideo = "stop_recording_video";
-    public final  static  String dispose = "dispose";
+    public final static  String dispose = "dispose";
 
     // Method arguments
     public final static  String licenseKey = "license_key";

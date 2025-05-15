@@ -35,6 +35,7 @@ class DeepArControllerPlus {
   bool _hasPermission = false;
   String? _iosLicenseKey;
   bool _isRecording = false;
+  bool isImageProcessing = false;
 
   CameraDirection _cameraDirection = CameraDirection.front;
   bool _flashState = false;
@@ -113,7 +114,8 @@ class DeepArControllerPlus {
   Future<InitializeResult> initialize({
     required String? androidLicenseKey,
     required String? iosLicenseKey,
-    Resolution resolution = Resolution.medium,
+    isImageProcessing = false,
+    Resolution resolution = Resolution.veryHigh,
   }) async {
     assert(androidLicenseKey != null || iosLicenseKey != null,
         "Both android and iOS license keys cannot be null");
@@ -186,7 +188,24 @@ class DeepArControllerPlus {
           retryCount++;
         }
 
-        if (dimensions != null) {
+        if (isImageProcessing && dimensions != null) {
+          _imageSize = sizeFromEncodedString(dimensions);
+          _aspectRatio = _imageSize!.width / _imageSize!.height;
+
+          int imageRetryCount = 0;
+          const maxImageRetries = 2;
+          bool imageProcessorStarted = false;
+          String imageErrorMessage = "";
+
+          while (!imageProcessorStarted && imageRetryCount <= maxImageRetries) {
+            try {
+              _textureId =
+                  await _deepArPlatformHandler.startImageProcessingAndroid();
+            } catch (e) {}
+          }
+          imageRetryCount++;
+          return const InitializeResult(success: false, message: "");
+        } else if (dimensions != null) {
           _imageSize = sizeFromEncodedString(dimensions);
           _aspectRatio = _imageSize!.width / _imageSize!.height;
 
